@@ -116,6 +116,74 @@ on this machine:
   agent per kind per process (backends guard with a mutex; the pure engine is
   internally parallel over matvecs).
 
+## Design choices
+
+**Two backends, one interface.** `needle.Engine` + `Options`/`Response` live in
+the root package; backends are subpackages, so the import picks the policy.
+`engine/cgo` pins you to a platform triple + libc++; `engine/pure` builds under
+`CGO_ENABLED=0` anywhere. Keeping both was also a development strategy: the
+cgo binding is ground truth, and the pure port doubles as a differential
+oracle against the JAX reference.
+
+**Weights as bytes, model as `go:embed`.** `Options.Weights []byte` matches the
+engine ABI (`needle_load(cact, n)` reads memory in place) and lets
+`model.Needle3` ship the whole 33.7 MB model inside the binary — no runtime
+file resolution, one self-contained demo CLI.
+
+**Python-mirrored surface.** `New/Complete/Run/Reset/Embed` and the JSON
+`Response` keys (`function_calls`, `suppressed_calls`, …) mirror
+`cactus-needle`, so ported examples read 1:1; the Go deltas are idiomatic:
+`Tool.Fn` callbacks instead of dict dispatch, `error` returns instead of
+exception-ish dicts, `ParseResponse` for wire JSON.
+
+**Process-global semantics preserved.** `needle.h` declares the engine one
+model per process, non-thread-safe. The cgo backend enforces that (mutex +
+one live agent per kind); the pure backend keeps the same contract for API
+symmetry even though it *could* host several agents (each would hold its own
+~1.1 GB dequant copy — see improvements).
+
+**FP32 eager dequant in the pure engine.** All CQ/FP16 records are decoded to
+FP32 at `New`, making the per-step matvecs flat, memory-bound, and trivially
+parallel (rows split across goroutines). Chose simplicity + fidelity over
+memory: the result is closer to the JAX truth than the C engine (which runs
+fp8-quantized KV/attention internally) at the cost of RSS. Everything runs
+greedy argmax; the C engine's sampler knobs are not documented, so none were
+invented.
+
+**Grammar by parse-and-validate.** After `<tool_call>`, every candidate token
+is checked by cloning the mini-JSON state and feeding the token's text
+(~8192 clones × a few bytes ≈ 0.1 ms per step). Exactness over precomputed
+char-class masks: a token is legal iff the whole span parses legal under the
+schema (keys ∈ properties, names ∈ loaded tools, `</tool_call>` only after the
+array closes). The reasoning phase stays free.
+
+**Confidence definition.** Engine reports ≈ min(geometric mean of greedy token
+probabilities, sigmoid(probe head)) — the geometric mean (not the raw product)
+is what keeps long turns out of the 1e-30 basement and matches the engine's
+band; see the 0.528 vs 0.529 check above.
+
+## Where to improve next
+
+- **Prefill batching**: the pure engine advances one token at a time even for
+  prompts; a batched prefill (and per-layer pipeline parallelism) is the
+  biggest latency lever (~3 s `Complete` today, most of it prompt).
+- **Memory**: engram tables dominate the 1.1 GB RSS; keeping them FP16 (or
+  dequant-on-access) roughly halves it. A shared dequantized `Model` handle
+  would also allow multiple concurrent agents without duplicating weights.
+- **Grammar completeness**: constrain the reasoning phase (the engine does),
+  validate value *types* against the schema (`temperature: float`), and
+  support multi-call arrays / streaming callbacks.
+- **Numerics**: an optional fp8-KV emulation path would let the pure engine
+  reproduce the C engine token-for-token instead of ~word-for-word.
+- **Coverage**: the windows/arm64 targets are compile-checked only — CI should
+  run the differential demo there; darwin has no upstream static lib, so it is
+  pure-engine-only forever unless Cactus ships one. Fuzzing the tokenizer
+  round-trip against the upstream `RefTokenizer` and pure-vs-cgo generations
+  over random toolsets would harden the remaining gaps.
+- **API sugar**: sampling options (temperature/top-p), populated
+  `PrefillTPS`/`DecodeTPS`, and a `Kind`-based multi-model registry mirroring
+  `needle_models()` when more checkpoints land.
+
 ## Repository layout
 
 ```
