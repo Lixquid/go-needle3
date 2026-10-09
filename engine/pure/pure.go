@@ -236,9 +236,8 @@ func (a *Agent) assembleResponse(generated []int, decodeP float64) (*needle.Resp
 			r.FunctionCalls = append(r.FunctionCalls, needle.Call{Name: c.Name, Arguments: c.Arguments})
 		}
 	}
-	a.pendingCall = r.Type == "call" && len(r.FunctionCalls) > 0
-
-	// Decode confidence: geometric mean of greedy token probabilities.
+	// Decode confidence: geometric mean of greedy token probabilities,
+	// floored by the calibrated probe head.
 	conf := decodeP
 	if logit, ok := a.st.probeConfidence(); ok {
 		if p := float64(sigmoid(logit)); p < conf {
@@ -247,6 +246,17 @@ func (a *Agent) assembleResponse(generated []int, decodeP float64) (*needle.Resp
 	}
 	r.Confidence = conf
 	r.HasConfidence = true
+
+	// Confidence gate, mirroring the reference engine: low-confidence calls
+	// are withheld (FunctionCalls emptied, kept in SuppressedCalls). The
+	// 0.1 threshold is the value observed via the differential fuzz corpus
+	// (suppressed at conf <= 0.093, emitted at >= 0.116 in all 35 cases).
+	const suppressThreshold = 0.1
+	if len(r.FunctionCalls) > 0 && conf < suppressThreshold {
+		r.SuppressedCalls = r.FunctionCalls
+		r.FunctionCalls = nil
+	}
+	a.pendingCall = r.Type == "call" && len(r.FunctionCalls) > 0
 	return r, nil
 }
 
