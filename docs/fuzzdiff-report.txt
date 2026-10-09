@@ -1,0 +1,140 @@
+== w-Paris
+prompt: "what is the weather in Paris?"
+pure: type=call calls=get_weather({"city":"Paris"}) conf=0.654 reasoning="City 'Paris' from query."
+cgo: type=call calls=get_weather({"city":"Paris"}) conf=0.675 reasoning="City 'Paris' from query."
+== w-Lagos
+prompt: "how hot is it in Lagos right now"
+pure: type=call calls=get_weather({"city":"Lagos"}) conf=0.311 reasoning="City 'Lagos' from query. Retrieve weather for that city."
+cgo: type=call calls=get_weather({"city":"Lagos"}) conf=0.295 reasoning="City 'Lagos' from query. Retrieve weather for that city."
+== w-Oslo
+prompt: "is it raining in Oslo"
+pure: type=call calls=get_weather({"city":"Oslo"}) conf=0.216 reasoning="City 'Oslo' from query. Retrieve weather for Oslo."
+cgo: type=call calls=get_weather({"city":"Oslo"}) conf=0.365 reasoning="Query asks about weather in Oslo. Call get_weather with city 'Oslo'."
+== w-Tokyo
+prompt: "weather forecast for Tokyo please"
+pure: type=call calls=get_weather({"city":"Tokyo"}) conf=0.574 reasoning="City 'Tokyo' from query. Optional parameter omitted."
+cgo: type=call calls=get_weather({"city":"Tokyo"}) conf=0.616 reasoning="City 'Tokyo' from query. Optional parameter omitted."
+== w-Mumbai
+prompt: "check the weather in Mumbai"
+pure: type=call calls=get_weather({"city":"Mumbai"}) conf=0.523 reasoning="City 'Mumbai' from query."
+cgo: type=call calls=get_weather({"city":"Mumbai"}) conf=0.542 reasoning="City 'Mumbai' from query. No other parameters needed."
+== w-Reykjavik
+prompt: "what's it like in Reykjavik right now?"
+pure: type=call calls=get_weather({"city":"Reykjavik"}) conf=0.519 reasoning="'Reykjavik' -> city 'Reykjavik'. No other parameters needed."
+cgo: type=call calls=get_weather({"city":"Reykjavik"}) conf=0.496 reasoning="'Reykjavik' -> city 'Reykjavik'. No other parameters needed."
+== l-0
+prompt: "turn on the kitchen lights"
+pure: type=call calls=control_light({"on":true,"room":"kitchen"}) conf=0.266 reasoning="room 'kitchen' from query; action 'on' from 'turn on'; brightness and room omitted."
+cgo: type=call calls=control_light({"on":true,"room":"kitchen"}) conf=0.281 reasoning="room 'kitchen' from query; action 'on' from 'turn on'; brightness and room omitted."
+== l-1
+prompt: "set the bedroom brightness to 40 percent"
+pure: type=call calls=control_light({"brightness":40,"room":"bedroom"}) conf=0.729 reasoning="room 'bedroom' from query; brightness 40 from '40 percent'; on and room omitted."
+cgo: type=call calls=control_light({"brightness":40,"room":"bedroom"}) conf=0.566 reasoning="room 'bedroom' from query; brightness 40 from '40 percent'; on and room omitted."
+== l-2
+prompt: "dim the living room to 30"
+pure: type=call calls=control_light({"brightness":30,"room":"living room"}) conf=0.459 reasoning="room 'living room' from query; brightness 30 from '30'; tool control_light."
+cgo: type=call calls=control_light({"brightness":30,"room":"living room"}) conf=0.502 reasoning="room 'living room' from query; brightness 30 from '30'"
+== l-3
+prompt: "turn off the hallway light"
+pure: type=call calls=control_light({"on":false,"room":"hallway"}) conf=0.239 reasoning="'turn off' -> brightness false; 'hallway light' -> room 'hallway'; 'off' -> on false"
+cgo: type=call calls=control_light({"on":false,"room":"hallway"}) conf=0.226 reasoning="'turn off' -> brightness false; 'hallway light' -> room 'hallway'; 'off' -> on false"
+== l-4
+prompt: "brighten the office to 80 percent"
+pure: type=call calls=control_light({"brightness":80,"room":"office"}) conf=0.118 reasoning="'brighten' -> brightness 80, 'office' -> room 'office', '80 percent' -> brightness 80."
+cgo: type=call calls=control_light({"brightness":80,"on":true,"room":"office"}) conf=0.116 reasoning="'brighten' -> brightness 80, 'office' -> room office, '80 percent' -> on true"
+== rnd-0
+prompt: "garden quiet?"
+pure: type=call calls= conf=0.039 reasoning="'garden' -> room 'garden'; 'quiet' -> brightness 0; 'on' true."
+cgo: type=call calls= conf=0.039 reasoning="'garden' -> room 'garden'; 'quiet' -> brightness 0; 'on' true."
+== rnd-1
+prompt: "kitchen mountain loud."
+pure: type=call calls= conf=0.030 reasoning="'kitchen' -> room 'kitchen', 'loud' -> brightness 50, 'mountain' -> room 'mountain', 'loud' -> on true."
+cgo: type=call calls= conf=0.028 reasoning="'kitchen' -> room 'kitchen', 'loud' -> brightness 5, 'mountain' -> room 'mountain', 'loud' -> on true."
+== rnd-2
+prompt: "quiet?"
+pure: type=call calls= conf=0.035 reasoning="'quiet' -> room 'quiet', 'quiet' -> brightness 0, 'on' -> on true."
+cgo: type=call calls= conf=0.036 reasoning="'quiet' -> room 'quiet', 'quiet' -> brightness 0, 'on' -> on true."
+== rnd-3
+prompt: "mountain garden humid temperature."
+pure: type=call calls= conf=0.015 reasoning="'mountain garden' -> room 'mountain garden'; 'humid temperature' -> temperature."
+cgo: type=call calls= conf=0.038 reasoning="'mountain garden' -> room 'mountain garden'; 'humid temperature' -> temperature."
+== rnd-4
+prompt: "loud?"
+pure: type=call calls= conf=0.018 reasoning="'loud' -> volume level; 'room' not specified, default to 'room' as typical room; 'on' true."
+cgo: type=call calls= conf=0.018 reasoning="'loud' -> volume level; 'room' not specified, default to 'room' as typical room; 'on' true."
+== rnd-5
+prompt: "light."
+pure: type=call calls=control_light({"brightness":100,"on":true}) conf=0.158 reasoning="'light' -> brightness 100, 'on' -> on true."
+cgo: type=call calls= conf=0.044 reasoning="'light' -> brightness 100, 'on' -> on true."
+== rnd-6
+prompt: "quiet seven weather temperature?"
+pure: type=respond calls= conf=0.012 reasoning="'quiet' -> room 'quiet', 'seven' -> brightness 7, 'temperature' -> required parameter."
+cgo: type=call calls= conf=0.022 reasoning="'quiet' -> room 'quiet', 'seven' -> brightness 7, 'temperature' -> required parameter."
+== rnd-7
+prompt: "temperature light rainforest kitchen."
+pure: type=call calls= conf=0.029 reasoning="'temperature light' -> room 'temperature light'; 'rainforest kitchen' -> room 'rainforest kitchen'; 'light' -> on true."
+cgo: type=call calls= conf=0.036 reasoning="'temperature light' -> room 'light', 'rainforest kitchen' -> room 'rainforest kitchen'."
+== edge-0
+prompt: "hi"
+pure: type=call calls= conf=0.045 reasoning="'hi' is a location name, but no location tool available."
+cgo: type=call calls= conf=0.093 reasoning="'hi' is a location phrase, but no location tool available."
+== edge-1
+prompt: "ok."
+pure: type=call calls= conf=0.019 reasoning="'ok' -> current weather for city 'Ook'."
+cgo: type=call calls= conf=0.019 reasoning="'ok' -> current weather for city 'Ook'."
+== edge-2
+prompt: "42"
+pure: type=call calls= conf=0.027 reasoning="'42' -> brightness 42; '42' -> room '42'; 'turn light on' -> enabled true; 'room' not specified, omitted."
+cgo: type=call calls= conf=0.045 reasoning="'42' -> room '42', 'turn' -> action 'turn', 'room' -> room 'room', 'brightness' -> 42."
+== edge-3
+prompt: "???"
+pure: type=call calls= conf=0.048 reasoning="'???' is a question -> get_weather for city 'Osaka'"
+cgo: type=call calls= conf=0.039 reasoning="'???' is a question -> get_weather for city 'Denver'"
+== edge-4
+prompt: "New York City"
+pure: type=call calls=get_weather({"city":"New York City"}) conf=0.580 reasoning="City name 'New York City' from query."
+cgo: type=call calls=get_weather({"city":"New York City"}) conf=0.549 reasoning="City name 'New York City' from query."
+== edge-5
+prompt: "the"
+pure: type=call calls= conf=0.051 reasoning="'the' is a city name -> city 'the'. No other details."
+cgo: type=call calls= conf=0.033 reasoning="'the' is a city name -> city 'the'. No other details."
+== uni-0
+prompt: "温度は？"
+pure: type=call calls=get_weather({"city":"温度は？"}) conf=0.102 reasoning="'温度は？' is a location name for get_weather. No city name given, so use default city."
+cgo: type=call calls= conf=0.065 reasoning="'温度は？' is a location name for get_weather. No city or area specified."
+== uni-1
+prompt: "café naïve résumé"
+pure: type=call calls= conf=0.006 reasoning="'café' -> name 'café', 'naïve' -> name 'naïve', 'résumé' -> name 'résumé'."
+cgo: type=call calls= conf=0.005 reasoning="'café' -> name 'café', 'naïve' -> name 'naïve', 'résumé' -> name 'résumé'."
+== uni-2
+prompt: "set temp to 23.5°C"
+pure: type=call calls=get_weather({"city":"23.5°C"}) conf=0.100 reasoning="'23.5°C' -> temperature_celsius 23.5; no unit conversion needed."
+cgo: type=call calls= conf=0.023 reasoning="Query 'set temp to 23.5°C' -> temperature 23.5. No unit conversion needed."
+== uni-3
+prompt: "☀️ tomorrow?"
+pure: type=call calls= conf=0.552 reasoning="No tool available for weather queries."
+cgo: type=call calls= conf=0.032 reasoning="'tomorrow' -> date 'tomorrow'; '☀️' -> name '☀️'; no location or time given."
+== uni-4
+prompt: "Är det varmt i Paris?"
+pure: type=call calls=get_weather({"city":"Paris"}) conf=0.206 reasoning="'Är det' -> get_weather; 'Paris' -> city Paris."
+cgo: type=call calls=get_weather({"city":"Paris"}) conf=0.206 reasoning="'Är det' -> get_weather; 'Paris' -> city Paris."
+== long-0
+prompt: "The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm.  turn the lights on now."
+pure: type=call calls= conf=0.017 reasoning="Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', '…"
+cgo: type=call calls= conf=0.013 reasoning="Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', '…"
+== long-1
+prompt: "The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm.  how hot is it in Oslo?"
+pure: type=call calls= conf=0.017 reasoning="Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'."
+cgo: type=call calls= conf=0.018 reasoning="Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'."
+== long-2
+prompt: "The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm.  close the window."
+pure: type=call calls= conf=0.016 reasoning="Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> paris, '…"
+cgo: type=call calls= conf=0.015 reasoning="Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> paris, '…"
+== long-3
+prompt: "The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm.  quiet please."
+pure: type=call calls= conf=0.024 reasoning="Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'. Paris -> city 'Paris', 'calm' -> 'calm'."
+cgo: type=call calls= conf=0.016 reasoning="Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', '…"
+== long-4
+prompt: "The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm. The weather in Paris is nice and calm.  seven gardens."
+pure: type=call calls= conf=0.017 reasoning="Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', '…"
+cgo: type=call calls= conf=0.013 reasoning="Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', 'nice and calm' -> required param. Paris -> city 'Paris', '…"

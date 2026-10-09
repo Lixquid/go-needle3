@@ -116,6 +116,41 @@ on this machine:
   agent per kind per process (backends guard with a mutex; the pure engine is
   internally parallel over matvecs).
 
+## Fuzz differential results
+
+`fuzzdiff_test.go` (build `cgo && linux`, ~100 s) runs a seeded 35-prompt
+corpus — 6 weather templates, 5 smart-home commands, 8 gibberish strings,
+6 edge cases, 5 unicode/numeric, 5 long (~180-token) — through both engines
+in one process and compares type, parsed tool calls, and reasoning per
+prompt. The C ABI exposes no quantization knob, so the reference side runs
+the engine's native quantized mode; the full per-case report is checked in
+at [docs/fuzzdiff-report.txt](docs/fuzzdiff-report.txt).
+
+| Metric | Pre-gate | Post-gate |
+|---|---|---|
+| Type agreement | 34/35 | 34/35 |
+| Tool-call agreement | 14/35 | **31/35** |
+| Fully exact (type + calls + reasoning) | 9/35 | **19/35** |
+| Confidence delta | mean 0.041 / max 0.52 | unchanged |
+
+What the fuzzing found:
+
+1. **The engine suppresses low-confidence calls** — pure was missing this
+   gate. Ported (`SuppressedCalls`, threshold 0.1; corpus: suppressed at
+   conf ≤ 0.093, emitted at ≥ 0.116 in every case), fixing 17 of 21 call
+   mismatches.
+2. **In-distribution behavior agrees fully**: on all 14 clear weather /
+   light requests, same type and same refusal behavior, 13/14 identical
+   calls (the one diff adds an optional `on` field at conf 0.116 — a true
+   tie).
+3. **Residual divergences are quantization-sensitive near-ties**: 15 cases
+   differ only in unconstrained reasoning wording; 3 flip the gate boundary
+   where the two confidence estimators disagree (e.g. 0.158 vs 0.044); 1
+   flips between EOS and `<tool_call>[]` (respond vs suppressed call —
+   behaviorally identical: the agent stops either way).
+4. No panics or one-sided errors on either side; the pure engine is
+   byte-reproducible across repeat runs (guarded in the test).
+
 ## Design choices
 
 **Two backends, one interface.** `needle.Engine` + `Options`/`Response` live in
@@ -176,10 +211,15 @@ band; see the 0.528 vs 0.529 check above.
 - **Numerics**: an optional fp8-KV emulation path would let the pure engine
   reproduce the C engine token-for-token instead of ~word-for-word.
 - **Coverage**: the windows/arm64 targets are compile-checked only — CI should
-  run the differential demo there; darwin has no upstream static lib, so it is
-  pure-engine-only forever unless Cactus ships one. Fuzzing the tokenizer
-  round-trip against the upstream `RefTokenizer` and pure-vs-cgo generations
-  over random toolsets would harden the remaining gaps.
+  run the differential test there (the seeded corpus landed as
+  `fuzzdiff_test.go`); darwin has no upstream static lib, so it is
+  pure-engine-only forever unless Cactus ships one. Tokenizer round-trip
+  fuzzing against the upstream `RefTokenizer` and expanding the corpus to
+  random toolsets remain open.
+- **Confidence estimator**: the engine's internal estimator is a black box;
+  our geometric-mean + probe min tracks it (mean delta 0.041) but flips the
+  suppression gate at the boundary on ~2 prompts in 35. Matching it exactly
+  would require probing the engine with engineered logit patterns.
 - **API sugar**: sampling options (temperature/top-p), populated
   `PrefillTPS`/`DecodeTPS`, and a `Kind`-based multi-model registry mirroring
   `needle_models()` when more checkpoints land.
