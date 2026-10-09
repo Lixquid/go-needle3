@@ -1,0 +1,4 @@
+/needle-pure
+/needle-cgo
+*.test
+.upstream/
