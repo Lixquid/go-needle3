@@ -73,7 +73,11 @@ func main() {
 func printResponse(r *needle.Response, verbose bool) {
 	fmt.Printf("  type=%s confidence=%.3f\n", r.Type, r.Confidence)
 	if len(r.FunctionCalls) == 0 {
-		fmt.Println("  no calls (refusal or off-topic)")
+		if len(r.SuppressedCalls) > 0 {
+			fmt.Printf("  no calls (below confidence gate; suppressed %d)\n", len(r.SuppressedCalls))
+		} else {
+			fmt.Println("  no calls (off-topic or respond)")
+		}
 	}
 	for _, c := range r.FunctionCalls {
 		args, _ := json.Marshal(c.Arguments)

@@ -107,9 +107,8 @@ on this machine:
 
 - Constrained decoding covers the JSON tool-call region (structure, schema
   keys, tool names, `[]`/`</tool_call>`/EOS ordering); the reasoning phase is
-  free, so the generated reasoning can occasionally drift where the engine's
-  stricter internal grammar would not (`{"city":"turn on"}` vs
-  `{"city":"kitchen"}`).
+  free, so its wording can drift where the engines' near-tie logits disagree
+  (e.g. "brighten" → `brightness:80` alone vs also `on:true` at conf 0.11).
 - Everything runs in FP32; the C engine quantizes KV/attention internally, so
   occasional token-level divergence is expected under identical prompts.
 - The engine's process-global single-model constraint is preserved: one live
