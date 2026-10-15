@@ -64,7 +64,8 @@ import (
 	"github.com/lixquid/go-needle3/model"
 )
 
-const usage = `usage: needle-ask [flags] <tools.json|-> [prompt]
+const (
+	usage = `usage: needle-ask [flags] <tools.json|-> [prompt]
 
 Matches a prompt against a toolset with the Needle 3 tool-calling model.
 
@@ -76,6 +77,72 @@ Arguments:
   prompt       the user query. Optional: if omitted, it is read from stdin.
 
 Flags:`
+
+	helpDetails = `
+
+The -format flag:
+
+  -format takes a Go text/template that replaces the bare tool name as
+  the output. It is rendered against a data object with these fields:
+
+    .Tool        name of the first function call ("" if the model made
+                 no call, e.g. an off-topic refusal)
+    .Args        arguments map of the first function call (map[string]any;
+                 nil when there is no call)
+    .Confidence  the 0..1 confidence of the match
+    .Success     whether the turn succeeded (bool)
+    .Raw         the full data object the -json flag would emit
+
+  A trailing newline is added if the rendered output lacks one. The
+  default template is "{{.Tool}}", i.e. the first tool call's name.
+
+  Examples:
+
+    needle-ask -format '{{.Tool}} {{.Confidence}}' tools.json "query"
+    needle-ask -format '{{if .Tool}}{{.Tool}}{{else}}no-match{{end}}' tools.json -
+    needle-ask -format '{{range .Raw.FunctionCalls}}{{.Name}}{{end}}' tools.json "query"
+
+  -format is mutually exclusive with -json; passing both is a usage
+  error (exit 2). Passing -json alone overrides the default template,
+  since the default is not treated as an explicit -format.
+
+The tools JSON:
+
+  The toolset is a JSON array of tool objects, one per callable
+  function:
+
+    [
+      {
+        "name": "get_weather",
+        "description": "Current weather for a city.",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "city": {"type": "string"}
+          },
+          "required": ["city"]
+        }
+      }
+    ]
+
+  Fields:
+
+    name         required; the function name the model will call
+    description  what the tool does; helps the model pick between tools
+    parameters   JSON-schema object describing the arguments. May be
+                 omitted for a tool that takes no arguments; a null
+                 value is treated as an empty parameter object.
+
+  Validation (all failures are usage errors, exit 2):
+
+    - the input must be a non-empty JSON array of objects
+    - every object must have a non-empty "name"
+    - "parameters", when present, must be a JSON object
+
+  Pass "-" as the path to read the JSON from stdin instead of a file;
+  the prompt must then be given as an argument, since stdin carries
+  the toolset.`
+)
 
 func main() {
 	// nil stdin means an interactive terminal: nothing is being piped, so
@@ -121,6 +188,7 @@ func run(argv []string, stdin io.Reader, stdout, stderr io.Writer, newEngine fun
 	fs.Usage = func() {
 		fmt.Fprintln(stderr, usage)
 		fs.PrintDefaults()
+		fmt.Fprint(stderr, helpDetails)
 	}
 	if err := fs.Parse(argv); err != nil {
 		if errors.Is(err, flag.ErrHelp) { // -h/-help: usage already printed
