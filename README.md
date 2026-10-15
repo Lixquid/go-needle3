@@ -1,4 +1,4 @@
-# needle-go
+# go-needle3
 
 Go library + example CLIs for [Needle 3](https://github.com/cactus-compute/needle)
 ([weights](https://huggingface.co/Cactus-Compute/needle3)) — Cactus Compute's
@@ -31,9 +31,9 @@ and an embedding query. One binary, one embedded `needle3.cact` (33.7 MB).
 
 ```go
 import (
-	needle "github.com/Zetaphor/needle-go"
-	"github.com/Zetaphor/needle-go/engine/pure"
-	nmodel "github.com/Zetaphor/needle-go/model"
+	needle "github.com/lixquid/go-needle3"
+	"github.com/lixquid/go-needle3/engine/pure"
+	nmodel "github.com/lixquid/go-needle3/model"
 )
 
 agent, err := pure.New(needle.Options{

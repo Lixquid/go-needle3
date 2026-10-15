@@ -3,8 +3,8 @@ package pure
 import (
 	"testing"
 
-	"github.com/Zetaphor/needle-go"
-	nmodel "github.com/Zetaphor/needle-go/model"
+	"github.com/lixquid/go-needle3"
+	nmodel "github.com/lixquid/go-needle3/model"
 )
 
 func demoTools() []needle.Tool {

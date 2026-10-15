@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Zetaphor/needle-go"
-	"github.com/Zetaphor/needle-go/engine/pure"
-	"github.com/Zetaphor/needle-go/model"
+	"github.com/lixquid/go-needle3"
+	"github.com/lixquid/go-needle3/engine/pure"
+	"github.com/lixquid/go-needle3/model"
 )
 
 func main() {

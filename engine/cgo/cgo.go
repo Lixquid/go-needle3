@@ -23,7 +23,7 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/Zetaphor/needle-go"
+	"github.com/lixquid/go-needle3"
 )
 
 // Engine implements needle.Engine.

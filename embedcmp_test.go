@@ -8,10 +8,10 @@ import (
 	"os"
 	"testing"
 
-	needle "github.com/Zetaphor/needle-go"
-	"github.com/Zetaphor/needle-go/engine/cgo"
-	"github.com/Zetaphor/needle-go/engine/pure"
-	nmodel "github.com/Zetaphor/needle-go/model"
+	needle "github.com/lixquid/go-needle3"
+	"github.com/lixquid/go-needle3/engine/cgo"
+	"github.com/lixquid/go-needle3/engine/pure"
+	nmodel "github.com/lixquid/go-needle3/model"
 )
 
 func TestEmbedCosine(t *testing.T) {

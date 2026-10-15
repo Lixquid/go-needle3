@@ -4,8 +4,8 @@ import (
 	"math"
 	"testing"
 
-	needle "github.com/Zetaphor/needle-go"
-	nmodel "github.com/Zetaphor/needle-go/model"
+	needle "github.com/lixquid/go-needle3"
+	nmodel "github.com/lixquid/go-needle3/model"
 )
 
 // TestEmbedPool guards the probe-pool path (regression: unbounded slices in

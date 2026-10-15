@@ -15,7 +15,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/Zetaphor/needle-go"
+	"github.com/lixquid/go-needle3"
 )
 
 // Token ids fixed by the vocabulary.
