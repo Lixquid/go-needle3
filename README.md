@@ -13,7 +13,7 @@ Two interchangeable backends, both implementing the `needle.Engine` interface
 |---|---|---|
 | What | FFI bindings to the prebuilt `libneedle.a` shipped in the HF repo (same engine as the Python wheel) | full runtime ported to Go: `.cact` CQ dequantizer, tokenizer, incremental attention, mHC lanes, engrams, Monarch-Hadamard MLP, constrained greedy decoding |
 | cgo | yes (static lib per platform) | **no** — zero non-Go dependencies |
-| Toolchain | C compiler **plus a libc++ runtime** (the static libs are clang/libc++ builds; ~50 `std::__1` symbols) | plain Go; not even a C toolchain required |
+| Toolchain | C compiler **plus static libc++ archives** (`libc++.a`, `libc++abi.a`); the libc++ is linked statically, so the binary only needs the base system libs | plain Go; not even a C toolchain required |
 | Demo runtime (this machine, 8 cores) | 0.9 s full demo | ~12 s full demo (~3 s per `Complete`) |
 | Weights | `.cact` read in place (~0.1 s to first token) | dequantized to FP32 at `New` (~1.5 s, ~1.1 GB RSS) |
 
@@ -80,9 +80,11 @@ by `engine/cgo` (static libs vendored under `engine/cgo/libs/<triple>/`).
 > [!NOTE]
 > "Only a C toolchain" holds for the cgo binding only in the sense that no
 > C++ *compiler* is invoked — but linking `libneedle.a` needs libc++ (and on
-> Linux a `libstdc++`-only link fails on `std::__1` symbols). This is why the
-> pure-Go variant exists, and why the module ships both: the pure engine has
-> no such requirement at all.
+> Linux a `libstdc++`-only link fails on `std::__1` symbols). libc++/
+> libc++abi are linked **statically** (`-l:libc++.a -l:libc++abi.a`), so the
+> final binary requires no shared C++ library — just the base system. This is
+> why the pure-Go variant exists, and why the module ships both: the pure
+> engine has no such requirement at all.
 
 ## Equivalence evidence
 
@@ -154,7 +156,8 @@ What the fuzzing found:
 
 **Two backends, one interface.** `needle.Engine` + `Options`/`Response` live in
 the root package; backends are subpackages, so the import picks the policy.
-`engine/cgo` pins you to a platform triple + libc++; `engine/pure` builds under
+`engine/cgo` pins you to a platform triple + static libc++ archives;
+`engine/pure` builds under
 `CGO_ENABLED=0` anywhere. Keeping both was also a development strategy: the
 cgo binding is ground truth, and the pure port doubles as a differential
 oracle against the JAX reference.

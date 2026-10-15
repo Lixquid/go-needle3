@@ -2,5 +2,8 @@
 
 package cgo
 
-// #cgo LDFLAGS: ${SRCDIR}/libs/linux-x86_64/libneedle.a -l:libc++.so.1 -l:libc++abi.so.1 -lm
+// Static linking: libc++/libc++abi are linked statically so the final binary
+// has no shared-library requirement beyond the base system (libc/libm/libgcc_s).
+
+// #cgo LDFLAGS: ${SRCDIR}/libs/linux-x86_64/libneedle.a -l:libc++.a -l:libc++abi.a -lm
 import "C"
