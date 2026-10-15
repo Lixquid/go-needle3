@@ -236,6 +236,10 @@ engine/pure/         pure-Go runtime (cact.go, tokenizer.go, model.go,
 engine/cgo/          libneedle.a bindings, vendored needle.h + libs/<triple>/
 examples/needle-pure      demo CLI, pure engine
 examples/needle-cgo       demo CLI, prebuilt engine
+cmd/needle-ask            one-shot tool matcher CLI (cgo backend):
+                          toolset JSON + prompt -> matched tool name,
+                          optional -facts / -confidence / -json / -format
+                          flags
 ```
 
 ## Upstream
