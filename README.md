@@ -20,8 +20,8 @@ Two interchangeable backends, both implementing the `needle.Engine` interface
 ## Quick start
 
 ```sh
-go run ./cmd/needle-pure   # pure-Go engine, no cgo
-go run ./cmd/needle-cgo    # prebuilt engine (linux/windows, x86_64/arm64)
+go run ./examples/needle-pure   # pure-Go engine, no cgo
+go run ./examples/needle-cgo    # prebuilt engine (linux/windows, x86_64/arm64)
 ```
 
 Both CLIs run the same scripted tool-call demos (weather + smart-home tools)
@@ -231,8 +231,8 @@ model/               needle3.cact + go:embed
 engine/pure/         pure-Go runtime (cact.go, tokenizer.go, model.go,
                      forward.go, grammar.go, pure.go)
 engine/cgo/          libneedle.a bindings, vendored needle.h + libs/<triple>/
-cmd/needle-pure      demo CLI, pure engine
-cmd/needle-cgo       demo CLI, prebuilt engine
+examples/needle-pure      demo CLI, pure engine
+examples/needle-cgo       demo CLI, prebuilt engine
 ```
 
 ## Upstream
