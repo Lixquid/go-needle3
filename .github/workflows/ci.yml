@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+          check-latest: true
+
+      - name: Install LLVM 21 static libc++ (matches the toolchain libneedle.a was built with)
+        run: |
+          set -euo pipefail
+          # LLVM >=19 libc++ is required: libneedle.a references
+          # std::__1::__hash_memory, which stock noble's LLVM 18 libc++.a
+          # does not define (it only has the abi:ne180100-tagged
+          # __murmur2_or_cityhash). The LLVM 21 packages also place the
+          # static archives directly in /usr/lib/x86_64-linux-gnu.
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo gpg --dearmor -o /etc/apt/keyrings/llvm.gpg
+          echo "deb [signed-by=/etc/apt/keyrings/llvm.gpg] http://apt.llvm.org/noble/ llvm-toolchain-noble-21 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm.list > /dev/null
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libc++-21-dev libc++abi-21-dev
+
+      - name: Verify go.mod is tidy
+        run: make tidy
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify build
+        run: make build
+
+      - name: gofmt check
+        run: make fmt
+
+      - name: go vet
+        run: make vet
+
+      - name: Run tests
+        # make test runs the unit tests; fuzzdiff_test.go self-skips unless
+        # NEEDLE_FUZZDIFF is set (it runs via `make fuzz` only); 30m timeout
+        # because engine/pure under -race can take >10m on 4 cores.
+        run: make test

@@ -1,4 +1,5 @@
 /needle-pure
 /needle-cgo
+/needle-ask
 *.test
 .upstream/

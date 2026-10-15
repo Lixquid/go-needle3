@@ -25,6 +25,9 @@ import (
 // divergences are expected where the engine deviates from the JAX reference,
 // not the port.
 func TestFuzzDifferential(t *testing.T) {
+	if os.Getenv("NEEDLE_FUZZDIFF") == "" {
+		t.Skip("fuzz differential is slow (especially under -race); run it with `make fuzz` or NEEDLE_FUZZDIFF=1 go test -run TestFuzzDifferential")
+	}
 	tools := demoTools()
 	ca, err := cgo.New(needle.Options{Weights: nmodel.Needle3, Tools: tools, MaxNewTokens: 256})
 	if err != nil {
