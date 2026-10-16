@@ -27,6 +27,8 @@ type runState struct {
 	egK    [][]float32 // per site: key vector at current position
 	egV    [][]float32 // per site: tapped value vector at current position
 
+	engramIdx []int // scratch: n-gram slot indices for the current position
+
 	cells []float32 // T×(L+1)×d hidden means for the probe head
 	cap   int
 	cellT int
@@ -202,8 +204,6 @@ func (st *runState) step(token int) []float32 {
 	return logits
 }
 
-var engramIdxScratch []int
-
 // computeEngrams computes each site's k and tapped v for position t.
 func (st *runState) computeEngrams(t int) {
 	m := st.m
@@ -218,11 +218,12 @@ func (st *runState) computeEngrams(t int) {
 		stride = heads
 	}
 	ntab := g.NumEngramTabs
-	// n-gram slot indices are shared across sites
-	if cap(engramIdxScratch) < ntab {
-		engramIdxScratch = make([]int, ntab)
+	// n-gram slot indices are shared across sites; scratch lives on the
+	// runState so concurrent agents never share mutable state.
+	if cap(st.engramIdx) < ntab {
+		st.engramIdx = make([]int, ntab)
 	}
-	idxs := engramIdxScratch[:ntab]
+	idxs := st.engramIdx[:ntab]
 	for tab := 0; tab < ntab; tab++ {
 		oi := tab / heads
 		order := g.Orders[oi]

@@ -10,6 +10,7 @@ import (
 )
 
 func TestFirstTokenTop5(t *testing.T) {
+	t.Parallel()
 	m := loadReal(t)
 	toolsJSON := `[{"name": "get_weather", "description": "Get the current weather for a city.", "parameters": {"properties": {"city": {"description": "city name", "type": "string"}}, "required": ["city"], "type": "object"}}, {"name": "set_lights", "description": "Turn a room's lights on/off and optionally set brightness.", "parameters": {"properties": {"brightness": {"maximum": 100, "minimum": 0, "type": "integer"}, "on": {"description": "turn on or off", "type": "boolean"}, "room": {"description": "room name", "type": "string"}}, "required": ["room", "on"], "type": "object"}}]`
 	prefixText := "<|im_start|>system\ndate: 2026-10-08 Thu 09:41; device: laptop<|im_end|>\n<|im_start|>user\n<tools>" + toolsJSON + "</tools>"

@@ -60,6 +60,13 @@ func New(opts needle.Options) (*Agent, error) {
 	if err != nil {
 		return nil, err
 	}
+	return newAgent(m, opts)
+}
+
+// newAgent assembles an Agent around an already-loaded model. The model is
+// treated as read-only from here on; all per-agent state lives on the Agent
+// and its runState, so agents may safely share one model.
+func newAgent(m *model, opts needle.Options) (*Agent, error) {
 	a := &Agent{m: m, opts: opts}
 
 	toolsJSON, err := opts.ToolsJSON()

@@ -11,10 +11,7 @@ import (
 // TestEmbedPool guards the probe-pool path (regression: unbounded slices in
 // rmsUnit/gain application).
 func TestEmbedPool(t *testing.T) {
-	a, err := New(needle.Options{Weights: nmodel.Needle3})
-	if err != nil {
-		t.Fatal(err)
-	}
+	a := newSharedAgent(t, needle.Options{Weights: nmodel.Needle3})
 	st := newRunState(a.m, 64)
 	for _, id := range append([]int{TokBOS}, a.m.tok.encode("dim the living room to 30")...) {
 		st.step(id)

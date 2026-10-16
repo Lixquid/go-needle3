@@ -37,10 +37,8 @@ func demoTools() []needle.Tool {
 }
 
 func TestGenerateDump(t *testing.T) {
-	a, err := New(needle.Options{Tools: demoTools(), System: "date: 2026-10-08 Thu 09:41; device: laptop", Weights: nmodel.Needle3})
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Parallel()
+	a := newSharedAgent(t, needle.Options{Tools: demoTools(), System: "date: 2026-10-08 Thu 09:41; device: laptop", Weights: nmodel.Needle3})
 	r, err := a.Complete("turn on the kitchen lights")
 	if err != nil {
 		t.Fatal(err)
@@ -49,7 +47,8 @@ func TestGenerateDump(t *testing.T) {
 }
 
 func TestGenerateDump2(t *testing.T) {
-	a, _ := New(needle.Options{Tools: demoTools(), System: "date: 2026-10-08 Thu 09:41; device: laptop", Weights: nmodel.Needle3})
+	t.Parallel()
+	a := newSharedAgent(t, needle.Options{Tools: demoTools(), System: "date: 2026-10-08 Thu 09:41; device: laptop", Weights: nmodel.Needle3})
 	for _, q := range []string{
 		"what's it like in Lagos right now?",
 		"the Purple Mountain Rainforest is very humid",

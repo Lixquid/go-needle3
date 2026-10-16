@@ -2,20 +2,54 @@ package pure
 
 import (
 	"os"
+	"sync"
 	"testing"
+
+	"github.com/lixquid/go-needle3"
 )
+
+// The dequantized model is read-only after loadModel, so it is loaded once
+// for the whole test binary and shared by every test/agent. This cuts ~8
+// redundant loads (~15 s each under -race).
+var (
+	modelOnce   sync.Once
+	sharedModel *model
+	sharedErr   error
+)
+
+func loadShared() (*model, error) {
+	modelOnce.Do(func() {
+		data, err := os.ReadFile("../../model/needle3.cact")
+		if err != nil {
+			sharedErr = err
+			return
+		}
+		sharedModel, sharedErr = loadModel(data)
+	})
+	return sharedModel, sharedErr
+}
 
 func loadReal(t *testing.T) *model {
 	t.Helper()
-	data, err := os.ReadFile("../../model/needle3.cact")
+	m, err := loadShared()
 	if err != nil {
-		t.Skip("model file not found")
-	}
-	m, err := loadModel(data)
-	if err != nil {
+		if os.IsNotExist(err) {
+			t.Skip("model file not found")
+		}
 		t.Fatalf("load: %v", err)
 	}
 	return m
+}
+
+// newSharedAgent builds an Agent on the shared model, skipping the
+// per-agent dequantization pass.
+func newSharedAgent(t *testing.T, opts needle.Options) *Agent {
+	t.Helper()
+	a, err := newAgent(loadReal(t), opts.WithDefaults())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return a
 }
 
 func TestShapes(t *testing.T) {
