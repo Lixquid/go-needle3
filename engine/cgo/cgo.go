@@ -43,6 +43,8 @@ type Agent struct {
 	maxNewTokens int
 	maxSteps     int
 	tools        []needle.Tool
+	system       string
+	strict       bool
 	closed       bool
 }
 
@@ -99,6 +101,8 @@ func New(opts needle.Options) (*Agent, error) {
 		maxNewTokens: opts.MaxNewTokens,
 		maxSteps:     opts.MaxSteps,
 		tools:        opts.Tools,
+		system:       opts.System,
+		strict:       opts.StrictExtraction(),
 	}
 	loaded = a
 	return a, nil

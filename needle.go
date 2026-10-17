@@ -15,6 +15,7 @@
 //	agent.run(query)               agent.Run(query)
 //	agent.reset()                  agent.Reset()
 //	agent.embed(text)              agent.Embed(text)
+//	needle.extract(text, schema)   pure.Extract(text, schema, opts) (same in cgo)
 //
 // The underlying engine holds one process-global, non-thread-safe model per
 // kind; backends serialize calls with a mutex and expect a single live Agent
