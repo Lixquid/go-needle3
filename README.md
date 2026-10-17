@@ -65,8 +65,90 @@ Python ↔ Go cheat sheet (also in [needle.go](needle.go)):
 | `agent.run(query)` | `agent.Run(query)` — agentic loop with `Tool.Fn` handlers |
 | `agent.reset()` | `agent.Reset()` |
 | `agent.embed(text)` | `agent.Embed(text)` → 3072-float unit vector |
+| `needle.extract(text, schema)` | `pure.Extract(text, schema, opts)` (same in `cgo`) |
+| `extract(text, Contact)` → model | `pure.ExtractAs[Contact](text, opts)` → `*Contact` |
+| `ExtractionValidationError` | `*needle.ExtractionError` |
 | `res["function_calls"]` | `resp.FunctionCalls` |
 | `res["confidence"]` | `resp.Confidence` |
+
+## Extraction
+
+Structured extraction is the model's other job: declare a shape, hand over
+messy text, get typed fields back. It is tool calling with exactly one
+record-shaped tool — the decode grammar guarantees the output parses, and
+classification falls out of an `enum` field. Both backends expose it the way
+the Python package does, as a function of *text* and *schema*:
+
+```go
+type Contact struct {
+	Name  string `json:"name"  description:"the person's full name"`
+	Email string `json:"email" description:"their email address"`
+}
+
+opts := needle.Options{Weights: model.Needle3}
+
+// typed: the schema comes from the struct, the answer decodes into it
+c, err := pure.ExtractAs[Contact]("Please email Jane Smith at jane@smith.example", opts)
+
+// generic: any JSON-schema map (or JSON text) works too
+ex, err := pure.Extract(text, map[string]any{
+	"name":       "Contact",
+	"parameters": map[string]any{"type": "object", "properties": map[string]any{...}},
+}, opts)
+var c Contact
+err = ex.Decode(&c) // ex also carries Reasoning, Confidence and Suppressed
+```
+
+`schema` accepts a struct/map type or value (`needle.SchemaOf[T]()`,
+`needle.SchemaFrom(v)`), a `needle.Schema`, a `needle.Tool`, a JSON-schema map
+— with or without the `{"name":…,"parameters":{…}}` wrapper — or that map as
+JSON text.
+
+Struct tags beyond `json`: `description:"…"` (what the model sees),
+`format:"date"`, `enum:"low,normal,high"`, `default:"…"`, `minimum`/`maximum`,
+and `required:"true"|"false"` to override the default. A field is required
+unless it is a pointer, `omitempty`/`omitzero`, or carries a default — the same
+rule the Python package applies to fields with defaults. Go types map by kind
+(strings, ints, floats, bools, slices→`array`, structs→`object` with inlined
+unnamed embedded structs, recursion cut off at `object`); `[]byte` and
+interfaces travel as free-text strings and `time.Time` becomes
+`format:"date-time"`, all as in the reference. A type may override its own
+fragment by implementing `JSONSchema() map[string]any`, and a record type its
+description by implementing `Description() string`. `needle.Date` accepts the
+bare `"2026-09-01"` the model emits (`time.Time` does not).
+
+**Strict grounding.** `Strict` (default on) rejects values that are not in the
+input, with `*needle.ExtractionError` listing the paths — and the values are
+still returned alongside the error, so a caller can decide:
+
+- a `format:"date"` value may only carry a year written in the text, plus the
+  system date's year when the text reasons relatively (`tomorrow`, `next week`);
+- the C engine's own `validation` report (`resp.Validation`, folded in
+  automatically) marks fabricated paths and negated requests; a flagged number
+  is cleared when the same number is written in the input, which is what lets
+  `$1,200.00` satisfy `total: 1200` without forgiving a fabricated `9999`.
+
+That is not hypothetical: on the real weights, *"Invoice from Acme for $1,200,
+due on 5th September 2031"* comes back as `due_date: 2026-10-05` — the model
+anchored the day to today's month — and the strict check names `due_date` while
+passing `vendor` and `total`.
+
+Worth knowing:
+
+- An engine binds one toolset per agent, so `Extract` builds a fresh agent per
+  call and closes it. `cgo` therefore needs the process-global slot to be free;
+  `pure` caches the dequantized model per weight set (`ReleaseModelCache` frees
+  it). For a loop over many texts, bind the schema once with
+  `opts.ForExtraction(schema)`, then `agent.ExtractTurn(text)` and `Reset`.
+- Off-topic text is `needle.ErrNoExtraction`; a call the confidence gate
+  withheld still yields its values, with `Extraction.Suppressed` set.
+- The pure engine's grammar constrains flat argument objects; array and nested
+  values stay valid JSON but lose their constraints mid-value.
+- Only the C engine reports `validation`, so the numeric/negation half of the
+  strict check has nothing to work on in the pure engine; the temporal half
+  applies to both.
+- `Run`'s strict refusal of ungrounded calls (Python's `run(strict=…)`) is not
+  ported; call `needle.ValidateGrounding` on a turn's arguments yourself.
 
 ## Platforms
 
@@ -230,10 +312,14 @@ band; see the 0.528 vs 0.529 check above.
 
 ```
 needle.go            shared API: Options, Tool, Response, Engine, Run loop
+extract.go           extraction: Schema, Extraction, ExtractWith plumbing
+schema_reflect.go    Go struct type -> JSON schema
+grounding.go         strict grounding: years, numbers, engine validation
 model/               needle3.cact + go:embed
 engine/pure/         pure-Go runtime (cact.go, tokenizer.go, model.go,
-                     forward.go, grammar.go, pure.go)
+                     forward.go, grammar.go, pure.go) + Extract
 engine/cgo/          libneedle.a bindings, vendored needle.h + libs/<triple>/
+                     + Extract
 examples/needle-pure      demo CLI, pure engine
 examples/needle-cgo       demo CLI, prebuilt engine
 cmd/needle-ask            one-shot tool matcher CLI (cgo backend):

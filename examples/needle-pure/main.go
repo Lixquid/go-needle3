@@ -4,6 +4,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 	"os"
@@ -68,6 +69,10 @@ func main() {
 		return
 	}
 	fmt.Printf("== embed: 3072-dim? %v, first values: %.4f %.4f %.4f\n", len(vec) == 3072, vec[0], vec[1], vec[2])
+
+	// Extraction binds its own toolset, so it wants the engine slot to itself.
+	agent.Close()
+	extractionDemo(*verbose)
 }
 
 func printResponse(r *needle.Response, verbose bool) {
@@ -129,5 +134,43 @@ func tools() []needle.Tool {
 				return map[string]any{"ok": true, "room": args["room"], "on": args["on"]}, nil
 			},
 		},
+	}
+}
+
+// invoice is the extraction demo record: a money amount and a date that the
+// strict grounding check can hold to the input.
+type invoice struct {
+	Vendor  string      `json:"vendor" description:"who issued the invoice"`
+	Total   float64     `json:"total,omitempty" description:"amount due"`
+	DueDate needle.Date `json:"due_date,omitempty" description:"when it is due"`
+}
+
+// extractionDemo is the model's other job: a schema goes in with the text and
+// typed fields come back. The one-liner form is pure.ExtractAs[invoice](text,
+// opts); this uses the generic form so the values still print when the strict
+// check finds one of them ungrounded.
+func extractionDemo(verbose bool) {
+	const text = "Invoice from Acme for $1,200, due on 5th September 2031"
+	fmt.Printf("\n== extraction: %q\n", text)
+
+	opts := needle.Options{Weights: model.Needle3, System: "date: 2026-10-08 Thu 09:41; device: laptop"}
+	ex, err := pure.Extract(text, needle.SchemaOf[invoice](), opts)
+	if err != nil {
+		var exErr *needle.ExtractionError
+		if !errors.As(err, &exErr) {
+			fmt.Println("  error:", err)
+			return
+		}
+		fmt.Println(" ", exErr)
+	}
+	var inv invoice
+	if err := ex.Decode(&inv); err != nil {
+		fmt.Println("  decode:", err)
+		return
+	}
+	fmt.Printf("  vendor=%q total=%.2f due=%s confidence=%.3f\n", inv.Vendor, inv.Total, inv.DueDate, ex.Confidence)
+	if verbose {
+		b, _ := json.Marshal(ex.Response)
+		fmt.Printf("  raw: %s\n", b)
 	}
 }
