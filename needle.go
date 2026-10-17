@@ -81,6 +81,21 @@ type Response struct {
 	// Raw carries the raw generated text for this turn (pure backend) or the
 	// engine's raw field, useful for debugging.
 	Raw string `json:"raw,omitempty"`
+
+	// Validation is the engine's own grounding report for the turn. The C
+	// engine returns one ("ungrounded" argument paths plus a negation flag);
+	// the pure backend has no engine-side flags, so it stays nil there.
+	Validation *Validation `json:"validation,omitempty"`
+}
+
+// Validation is the grounding report the engine attaches to a turn.
+type Validation struct {
+	// Ungrounded lists the argument paths the engine considers fabricated,
+	// qualified by the tool name ("Invoice.due_date").
+	Ungrounded []string `json:"ungrounded,omitempty"`
+	// Negation is set when the engine read the turn as a negation of the
+	// requested record ("no invoice needed").
+	Negation bool `json:"negation,omitempty"`
 }
 
 // Options configures an Agent.
@@ -100,7 +115,27 @@ type Options struct {
 	MaxNewTokens int
 	// MaxSteps caps the Run agentic loop. Default 8.
 	MaxSteps int
+	// Strict makes Extract reject values that are not grounded in the input
+	// with an *ExtractionError. Nil means true, mirroring the Python default;
+	// set it to *false to return the model's values as-is. It says nothing
+	// about Complete and Run, which do not validate.
+	Strict *bool
+	// AutoDate adds the local date to Options.System when it carries none, so
+	// a relative date ("due tomorrow") can be resolved and licensed. Nil
+	// means true. Used by Extract only.
+	AutoDate *bool
 }
+
+// StrictExtraction reports whether Extract should validate grounding; unset
+// means strict, like the Python package.
+func (o Options) StrictExtraction() bool { return o.Strict == nil || *o.Strict }
+
+// AutoDateFacts reports whether Extract may add the local date fact.
+func (o Options) AutoDateFacts() bool { return o.AutoDate == nil || *o.AutoDate }
+
+// Bool returns a pointer to v, for turning Extract's defaults off:
+// opts.Strict = needle.Bool(false).
+func Bool(v bool) *bool { return &v }
 
 // Engine is implemented by both backends.
 type Engine interface {
